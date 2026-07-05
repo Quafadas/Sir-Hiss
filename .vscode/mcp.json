@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "Sir-Hiss-metals": {
+      "url": "http://localhost:53600/mcp",
+      "type": "http"
+    }
+  }
+}

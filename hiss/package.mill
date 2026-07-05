@@ -1,0 +1,24 @@
+package build.hiss
+
+import smithy4s.codegen.mill._
+import mill._, mill.scalalib._
+
+object  `package` extends ScalaModule with build.FormatFix with Smithy4sModule {
+
+  def scalaVersion = build.V.scala
+
+  def moduleDeps = Seq(
+    build.smithydefs
+  )
+
+  def mvnDeps = Seq(
+    mvn"com.disneystreaming.smithy4s::smithy4s-http4s-swagger:${smithy4sVersion()}",
+    mvn"org.http4s::http4s-ember-server:0.23.34"
+  )
+
+  object test extends ScalaTests with TestModule.Munit {
+    def mvnDeps = Seq(
+      mvn"org.scalameta::munit::${build.V.munit}"
+    )
+  }
+}

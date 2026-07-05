@@ -10,20 +10,28 @@ import com.comcast.ip4s._
 import smithy4s.http4s.SimpleRestJsonBuilder
 import cats.Id
 import smithy4s.kinds.PolyFunction
+import org.http4s.dsl.io._
+import org.http4s.twirl._
 
 object HelloWorldImpl extends HelloWorldService[Id] {
 
   def getHello(name: String, town: Option[String]): Greeting = {
     town match {
-      case None => Greeting(s"Hello $name!")
+      case None    => Greeting(s"Hello $name!")
       case Some(t) => Greeting(s"Hello $name from $t!")
     }
   }
   def hello(name: String, town: Option[String]): Greeting = {
     town match {
-      case None => Greeting(s"Hello $name!")
+      case None    => Greeting(s"Hello $name!")
       case Some(t) => Greeting(s"Hello $name from $t!")
     }
+  }
+}
+
+object UI {
+  val routes: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root / "ui" =>
+    Ok(html.hello("boo"))
   }
 }
 
@@ -33,7 +41,9 @@ object Routes {
 
   // val arg = HelloWorldImpl.transform(toIO)
 
-  def routed(routes: Resource[IO, HttpRoutes[IO]]*) : Resource[IO, HttpRoutes[IO]] =
+  def routed(
+      routes: Resource[IO, HttpRoutes[IO]]*
+  ): Resource[IO, HttpRoutes[IO]] =
     routes.toList.sequence.map(_.reduceLeft(_ <+> _))
 
   val docs: HttpRoutes[IO] = smithy4s.http4s.swagger.docs[IO](HelloWorldService)
@@ -43,14 +53,14 @@ object Routes {
 
 object Main extends IOApp.Simple {
 
-
-private val toIO: PolyFunction[cats.Id, IO] = new PolyFunction[cats.Id, IO]{
-		def apply[A](result: cats.Id[A]): IO[A] = IO.pure(result)
-}
+  private val toIO: PolyFunction[cats.Id, IO] = new PolyFunction[cats.Id, IO] {
+    def apply[A](result: cats.Id[A]): IO[A] = IO.pure(result)
+  }
 
   val routes = Routes.routed(
     SimpleRestJsonBuilder.routes(HelloWorldImpl.transform(toIO)).resource,
-    Resource.pure[IO, HttpRoutes[IO]](Routes.docs)
+    Resource.pure[IO, HttpRoutes[IO]](Routes.docs),
+    Resource.pure[IO, HttpRoutes[IO]](UI.routes)
   )
 
   val run = routes

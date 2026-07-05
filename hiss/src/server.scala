@@ -1,14 +1,25 @@
 import smithy4s.example.hello._
-import cats.effect._
+import cats.effect.IO
+import cats.effect.IOApp
+import cats.effect.Resource
 import cats.implicits._
 import org.http4s.implicits._
 import org.http4s.ember.server._
 import org.http4s._
 import com.comcast.ip4s._
 import smithy4s.http4s.SimpleRestJsonBuilder
+import cats.Id
+import smithy4s.kinds.PolyFunction
 
-object HelloWorldImpl extends HelloWorldService[IO] {
-  def hello(name: String, town: Option[String]): IO[Greeting] = IO.pure {
+object HelloWorldImpl extends HelloWorldService[Id] {
+
+  def getHello(name: String, town: Option[String]): Greeting = {
+    town match {
+      case None => Greeting(s"Hello $name!")
+      case Some(t) => Greeting(s"Hello $name from $t!")
+    }
+  }
+  def hello(name: String, town: Option[String]): Greeting = {
     town match {
       case None => Greeting(s"Hello $name!")
       case Some(t) => Greeting(s"Hello $name from $t!")
@@ -17,18 +28,32 @@ object HelloWorldImpl extends HelloWorldService[IO] {
 }
 
 object Routes {
-  private val example: Resource[IO, HttpRoutes[IO]] =
-    SimpleRestJsonBuilder.routes(HelloWorldImpl).resource
+  // private val example: Resource[IO, HttpRoutes[IO]] =
+  //   SimpleRestJsonBuilder.routes(HelloWorldImpl.transform(toIO)).resource
 
-  private val docs: HttpRoutes[IO] =
-    smithy4s.http4s.swagger.docs[IO](HelloWorldService)
+  // val arg = HelloWorldImpl.transform(toIO)
 
-  val all: Resource[IO, HttpRoutes[IO]] = example.map(_ <+> docs)
+  def routed(routes: Resource[IO, HttpRoutes[IO]]*) : Resource[IO, HttpRoutes[IO]] =
+    routes.toList.sequence.map(_.reduceLeft(_ <+> _))
+
+  val docs: HttpRoutes[IO] = smithy4s.http4s.swagger.docs[IO](HelloWorldService)
+
+  // val all: Resource[IO, HttpRoutes[IO]] = example.map(_ <+> docs)
 }
 
 object Main extends IOApp.Simple {
 
-  val run = Routes.all
+
+private val toIO: PolyFunction[cats.Id, IO] = new PolyFunction[cats.Id, IO]{
+		def apply[A](result: cats.Id[A]): IO[A] = IO.pure(result)
+}
+
+  val routes = Routes.routed(
+    SimpleRestJsonBuilder.routes(HelloWorldImpl.transform(toIO)).resource,
+    Resource.pure[IO, HttpRoutes[IO]](Routes.docs)
+  )
+
+  val run = routes
     .flatMap { routes =>
       EmberServerBuilder
         .default[IO]

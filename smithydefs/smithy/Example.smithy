@@ -7,10 +7,18 @@ use alloy#simpleRestJson
 @simpleRestJson
 service HelloWorldService {
   version: "1.0.0",
-  operations: [Hello]
+  operations: [GetHello, Hello]
 }
 
-@http(method: "POST", uri: "/{name}", code: 200)
+@readonly
+@http(method: "GET", uri: "/name/{name}", code: 200)
+operation GetHello {
+  input: Person,
+  output: Greeting
+}
+
+
+@http(method: "POST", uri: "/name/{name}", code: 200)
 operation Hello {
   input: Person,
   output: Greeting

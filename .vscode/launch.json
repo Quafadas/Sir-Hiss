@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "scala",
+      "request": "launch",
+      "name": "Main",
+      "mainClass": "hiss.Main",
+      "buildTarget": "file:///Users/simon/Code/Sir-Hiss/hiss",
+      "args": [],
+      "jvmOptions": [],
+      "env": {}
+    }
+  ]
+}

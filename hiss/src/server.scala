@@ -48,7 +48,7 @@ object Main extends IOApp.Simple {
         .build
     }
     .use(_ =>
-      IO.println("Server started at http://localhost:9000") *>
+      IO.println("Server started at http://localhost:9000. Try http://localhost:9000/ui and http://localhost:9000/docs") *>
         IO.never
     )
 

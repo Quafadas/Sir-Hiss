@@ -1,37 +1,74 @@
-import smithy4s.example.hello._
+package hiss
+
+import scala.concurrent.duration.*
+
+import org.http4s.*
+import org.http4s.dsl.io.*
+import org.http4s.ember.server.*
+import org.http4s.implicits.*
+import org.http4s.twirl.*
+
+import com.comcast.ip4s.*
+
 import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect.Resource
-import cats.implicits._
-import org.http4s.implicits._
-import org.http4s.ember.server._
-import org.http4s._
-import com.comcast.ip4s._
-import smithy4s.http4s.SimpleRestJsonBuilder
-import cats.Id
-import smithy4s.kinds.PolyFunction
-import org.http4s.dsl.io._
-import org.http4s.twirl._
+import cats.implicits.*
+import smithy4s.http.UrlForm
 
-object HelloWorldImpl extends HelloWorldService[Id] {
+object FormRoutes {
 
-  def getHello(name: String, town: Option[String]): Greeting = {
-    town match {
-      case None    => Greeting(s"Hello $name!")
-      case Some(t) => Greeting(s"Hello $name from $t!")
-    }
-  }
-  def hello(name: String, town: Option[String]): Greeting = {
-    town match {
-      case None    => Greeting(s"Hello $name!")
-      case Some(t) => Greeting(s"Hello $name from $t!")
-    }
-  }
-}
+  // Decoder is derived from the smithy-generated CreatePersonInput schema —
+  // the Smithy model is the single source of truth for field names and types.
+  private val formDecoder =
+    UrlForm
+      .Decoder(
+        ignoreUrlFormFlattened = false,
+        capitalizeStructAndUnionMemberNames = false
+      )
+      .fromSchema(CreatePersonInput.schema)
 
-object UI {
-  val routes: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root / "ui" =>
-    Ok(html.hello("boo"))
+  val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+
+    case GET -> Root / "ui" =>
+      Ok(html.people(PersonServiceImpl.people))
+
+    case GET -> Root / "ui" / "people" / "rows" =>
+      Ok(html.peopleRows(PersonServiceImpl.people))
+
+    case GET -> Root / "ui" / "people" / IntVar(id) / "edit" =>
+      PersonServiceImpl.people.find(_.id == id) match {
+        case Some(p) => Ok(html.personEditRow(p))
+        case None    => NotFound()
+      }
+
+    case req @ POST -> Root / "ui" / "people" =>
+      for {
+        body <- req.bodyText.compile.string
+        resp <- UrlForm.parse(body).flatMap(formDecoder.decode) match {
+          case Right(input) =>
+            PersonServiceImpl.createPerson(input.name, input.town)
+            Ok(html.peopleRows(PersonServiceImpl.people))
+          case Left(err) =>
+            BadRequest(err.toString)
+        }
+      } yield resp
+
+    case req @ PUT -> Root / "ui" / "people" / IntVar(id) =>
+      for {
+        body <- req.bodyText.compile.string
+        resp <- UrlForm.parse(body).flatMap(formDecoder.decode) match {
+          case Right(input) =>
+            PersonServiceImpl.updatePerson(id, input.name, input.town)
+            Ok(html.peopleRows(PersonServiceImpl.people))
+          case Left(err) =>
+            BadRequest(err.toString)
+        }
+      } yield resp
+
+    case DELETE -> Root / "ui" / "people" / IntVar(id) =>
+      PersonServiceImpl.deletePerson(id)
+      Ok(html.peopleRows(PersonServiceImpl.people))
   }
 }
 
@@ -46,21 +83,17 @@ object Routes {
   ): Resource[IO, HttpRoutes[IO]] =
     routes.toList.sequence.map(_.reduceLeft(_ <+> _))
 
-  val docs: HttpRoutes[IO] = smithy4s.http4s.swagger.docs[IO](HelloWorldService)
+  val docs: HttpRoutes[IO] = smithy4s.http4s.swagger.docs[IO](PersonService)
 
   // val all: Resource[IO, HttpRoutes[IO]] = example.map(_ <+> docs)
 }
 
 object Main extends IOApp.Simple {
 
-  private val toIO: PolyFunction[cats.Id, IO] = new PolyFunction[cats.Id, IO] {
-    def apply[A](result: cats.Id[A]): IO[A] = IO.pure(result)
-  }
-
   val routes = Routes.routed(
-    SimpleRestJsonBuilder.routes(HelloWorldImpl.transform(toIO)).resource,
+    Harness.routesIO(PersonServiceImpl),
     Resource.pure[IO, HttpRoutes[IO]](Routes.docs),
-    Resource.pure[IO, HttpRoutes[IO]](UI.routes)
+    Resource.pure[IO, HttpRoutes[IO]](FormRoutes.routes)
   )
 
   val run = routes
@@ -70,8 +103,12 @@ object Main extends IOApp.Simple {
         .withPort(port"9000")
         .withHost(host"localhost")
         .withHttpApp(routes.orNotFound)
+        .withShutdownTimeout(10.millis)
         .build
     }
-    .use(_ => IO.never)
+    .use(_ =>
+      IO.println("Server started at http://localhost:9000") *>
+        IO.never
+    )
 
 }

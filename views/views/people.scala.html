@@ -1,0 +1,48 @@
+@(people: List[hiss.Person])
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>People</title>
+  <script src="https://unpkg.com/htmx.org@@2.0.4/dist/htmx.min.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+    h1, h2 { margin-bottom: 0.5rem; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: #f0f0f0; }
+    input[type=text] { padding: 0.3rem 0.5rem; width: 100%; box-sizing: border-box; }
+    button { padding: 0.3rem 0.7rem; cursor: pointer; }
+    .add-form { display: flex; gap: 0.5rem; align-items: flex-end; }
+    .add-form label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>People</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Town</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="people-tbody">
+      @html.peopleRows(people)
+    </tbody>
+  </table>
+
+  <h2>Add Person</h2>
+  <form class="add-form"
+        hx-post="/ui/people"
+        hx-target="#people-tbody"
+        hx-swap="innerHTML"
+        hx-on--after-request="this.reset()">
+    <label>Name <input type="text" name="name" placeholder="Name" required /></label>
+    <label>Town <input type="text" name="town" placeholder="Town" /></label>
+    <button type="submit">Add</button>
+  </form>
+</body>
+</html>

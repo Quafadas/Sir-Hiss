@@ -1,0 +1,24 @@
+package build.views
+
+import smithy4s.codegen.mill._
+import mill._, mill.scalalib._
+
+object `package` extends ScalaModule with mill.twirllib.TwirlModule {
+
+  def scalaVersion = build.V.scala
+
+  def moduleDeps = Seq(
+    build.smithydefs
+  )
+
+  def generatedSources = Task { Seq(compileTwirl().classes) }
+
+  def twirlVersion = "2.0.9"
+
+  def mvnDeps = Task(
+    Seq(
+      mvn"org.playframework.twirl::twirl-api:${twirlVersion()}"
+      // mvn"org.http4s::http4s-twirl:0.24.0"
+    )
+  )
+}

@@ -1,0 +1,17 @@
+@(people: List[hiss.Person])
+@for(p <- people) {
+<tr id="row-@{p.id}">
+  <td>@{p.id}</td>
+  <td>@{p.name}</td>
+  <td>@{p.town.getOrElse("-")}</td>
+  <td>
+    <button hx-get="/ui/people/@{p.id}/edit"
+            hx-target="#row-@{p.id}"
+            hx-swap="outerHTML">Edit</button>
+    <button hx-delete="/ui/people/@{p.id}"
+            hx-target="#people-tbody"
+            hx-swap="innerHTML"
+            hx-confirm="Delete @{p.name}?">Delete</button>
+  </td>
+</tr>
+}

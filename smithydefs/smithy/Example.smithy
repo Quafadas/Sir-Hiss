@@ -1,39 +1,81 @@
 $version: "2"
 
-namespace smithy4s.example.hello
+namespace hiss
 
 use alloy#simpleRestJson
 
 @simpleRestJson
-service HelloWorldService {
+service PersonService {
   version: "1.0.0",
-  operations: [GetHello, Hello]
+  operations: [CreatePerson, GetPerson, UpdatePerson, DeletePerson, ListPeople]
+}
+
+@http(method: "POST", uri: "/people", code: 201)
+operation CreatePerson {
+  input: CreatePersonInput,
+  output: Person
 }
 
 @readonly
-@http(method: "GET", uri: "/name/{name}", code: 200)
-operation GetHello {
-  input: Person,
-  output: Greeting
+@http(method: "GET", uri: "/people/{id}", code: 200)
+operation GetPerson {
+  input: PersonIdInput,
+  output: Person
 }
 
+@idempotent
+@http(method: "PUT", uri: "/people/{id}", code: 200)
+operation UpdatePerson {
+  input: UpdatePersonInput,
+  output: Person
+}
 
-@http(method: "POST", uri: "/name/{name}", code: 200)
-operation Hello {
-  input: Person,
-  output: Greeting
+@idempotent
+@http(method: "DELETE", uri: "/people/{id}", code: 204)
+operation DeletePerson {
+  input: PersonIdInput
+}
+
+@readonly
+@http(method: "GET", uri: "/people", code: 200)
+operation ListPeople {
+  output: ListPeopleOutput
 }
 
 structure Person {
-  @httpLabel
+  @required
+  id: Integer,
   @required
   name: String,
-
-  @httpQuery("town")
   town: String
 }
 
-structure Greeting {
+structure PersonIdInput {
   @required
-  message: String
+  @httpLabel
+  id: Integer
+}
+
+structure CreatePersonInput {
+  @required
+  name: String,
+  town: String
+}
+
+structure UpdatePersonInput {
+  @required
+  @httpLabel
+  id: Integer,
+  @required
+  name: String,
+  town: String
+}
+
+structure ListPeopleOutput {
+  @required
+  people: PeopleList
+}
+
+list PeopleList {
+  member: Person
 }

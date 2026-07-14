@@ -14,10 +14,6 @@ import cats.effect.Resource
 import cats.implicits.*
 
 object Routes {
-  // private val example: Resource[IO, HttpRoutes[IO]] =
-  //   SimpleRestJsonBuilder.routes(HelloWorldImpl.transform(toIO)).resource
-
-  // val arg = HelloWorldImpl.transform(toIO)
 
   def routed(
       routes: Resource[IO, HttpRoutes[IO]]*

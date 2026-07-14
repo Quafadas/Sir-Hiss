@@ -1,5 +1,5 @@
 # Sir-Hiss
-Sibilant software - Simple Synchronous Scala Swirl Server Stack
+Sibilant Software a Simple Synchronous Scala Swirl Server Stack
 
 An experiment in server side scala-development, using smithy4s, http4s, and twirl.
 

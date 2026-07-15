@@ -19,7 +19,7 @@ list PeopleList {
 @simpleRestJson
 service PersonService {
   version: "1.0.0",
-  operations: [CreatePerson, GetPerson, UpdatePerson, DeletePerson, AllPeople]
+  operations: [CreatePerson, GetPerson, UpdatePerson, PatchPerson, DeletePerson, AllPeople]
 }
 
 @http(method: "POST", uri: "/people", code: 201)
@@ -52,6 +52,19 @@ operation UpdatePerson {
     id: Integer,
     @required
     name: String,
+    town: String
+  },
+  output: Person
+}
+
+@idempotent
+@http(method: "PATCH", uri: "/people/{id}", code: 200)
+operation PatchPerson {
+  input := {
+    @required
+    @httpLabel
+    id: Integer,
+    @required
     town: String
   },
   output: Person

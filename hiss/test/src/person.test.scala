@@ -7,8 +7,8 @@ class PersonSuite extends munit.FunSuite {
 
   // ── List ────────────────────────────────────────────────────────────────────
 
-  test("listPeople returns all seed people") {
-    val result = svc.listPeople()
+  test("allPeople returns all seed people") {
+    val result = svc.allPeople()
     assertEquals(result.people.length, 3)
   }
 
@@ -32,7 +32,7 @@ class PersonSuite extends munit.FunSuite {
     assertEquals(p.id, 4)
     assertEquals(p.name, "Bob")
     assertEquals(p.town, Some("Bath"))
-    assertEquals(s.listPeople().people.length, 4)
+    assertEquals(s.allPeople().people.length, 4)
   }
 
   test("createPerson with no town stores None") {
@@ -61,7 +61,7 @@ class PersonSuite extends munit.FunSuite {
   test("updatePerson does not affect other rows") {
     val s = svc
     s.updatePerson(1, "Johnny", None)
-    assertEquals(s.listPeople().people.length, 3)
+    assertEquals(s.allPeople().people.length, 3)
     assertEquals(s.getPerson(2).name, "Jane")
   }
 
@@ -70,14 +70,14 @@ class PersonSuite extends munit.FunSuite {
   test("deletePerson removes the person") {
     val s = svc
     s.deletePerson(1)
-    assertEquals(s.listPeople().people.length, 2)
+    assertEquals(s.allPeople().people.length, 2)
     intercept[Exception](s.getPerson(1))
   }
 
   test("deletePerson with unknown id is a no-op") {
     val s = svc
     s.deletePerson(999)
-    assertEquals(s.listPeople().people.length, 3)
+    assertEquals(s.allPeople().people.length, 3)
   }
 
   // ── Round-trip ──────────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ class PersonSuite extends munit.FunSuite {
     val p = s.createPerson("Temp", None)
     s.updatePerson(p.id, "Temp Updated", Some("Anywhere"))
     s.deletePerson(p.id)
-    assertEquals(s.listPeople().people.length, 3)
+    assertEquals(s.allPeople().people.length, 3)
   }
 }
 

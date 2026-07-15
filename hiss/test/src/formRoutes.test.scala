@@ -50,7 +50,7 @@ class FormRoutesSuite extends munit.FunSuite {
     val resp = exec(req, svc)
     assertEquals(resp.status, Status.Ok)
     assert(body(resp).contains("Dave"), "expected Dave in response")
-    assertEquals(svc.listPeople().people.length, 4)
+    assertEquals(svc.allPeople().people.length, 4)
   }
 
   test("POST /ui/people with no town creates person with no town") {
@@ -89,7 +89,7 @@ class FormRoutesSuite extends munit.FunSuite {
     val resp = exec(req, svc)
     assertEquals(resp.status, Status.Ok)
     assert(!body(resp).contains("John"), "John should be gone")
-    assertEquals(svc.listPeople().people.length, 2)
+    assertEquals(svc.allPeople().people.length, 2)
   }
 
   test("DELETE /ui/people/1 then GET /ui/people/1/edit returns 404") {

@@ -9,7 +9,6 @@ import cats.effect.IO
 import cats.implicits.*
 import smithy4s.http.UrlForm
 
-
 object PersonServiceImpl extends PersonServiceT
 
 trait PersonServiceT extends PersonService[Id] {
@@ -30,7 +29,7 @@ trait PersonServiceT extends PersonService[Id] {
 
   override def getPerson(id: Int): Person =
     people
-      .find(_.id == id)
+      .find(_.id == id)      
       .getOrElse(throw new Exception(s"Person $id not found"))
 
   override def updatePerson(
@@ -46,62 +45,61 @@ trait PersonServiceT extends PersonService[Id] {
   override def deletePerson(id: Int): Unit =
     people = people.filterNot(_.id == id)
 
-  override def listPeople(): ListPeopleOutput = ListPeopleOutput(people)
+  override def allPeople(): AllPeopleOutput = AllPeopleOutput(people)
 }
-
 
 object FormRoutes {
 
-	// Decoder is derived from the smithy-generated CreatePersonInput schema —
-	// the Smithy model is the single source of truth for field names and types.
-	private val formDecoder =
-		UrlForm
-			.Decoder(
-				ignoreUrlFormFlattened = false,
-				capitalizeStructAndUnionMemberNames = false
-			)
-			.fromSchema(CreatePersonInput.schema)
+  // Decoder is derived from the smithy-generated CreatePersonInput schema —
+  // the Smithy model is the single source of truth for field names and types.
+  private val formDecoder =
+    UrlForm
+      .Decoder(
+        ignoreUrlFormFlattened = false,
+        capitalizeStructAndUnionMemberNames = false
+      )
+      .fromSchema(CreatePersonInput.schema)
 
-	def routes(svc: PersonServiceT): HttpRoutes[IO] = HttpRoutes.of[IO] {
+  def routes(svc: PersonServiceT): HttpRoutes[IO] = HttpRoutes.of[IO] {
 
-		case GET -> Root / "ui" =>
-			Ok(html.people(svc.people))
+    case GET -> Root / "ui" =>
+      Ok(html.people(svc.people))
 
-		case GET -> Root / "ui" / "people" / "rows" =>
-			Ok(html.peopleRows(svc.people))
+    case GET -> Root / "ui" / "people" / "rows" =>
+      Ok(html.peopleRows(svc.people))
 
-		case GET -> Root / "ui" / "people" / IntVar(id) / "edit" =>
-			svc.people.find(_.id == id) match {
-				case Some(p) => Ok(html.personEditRow(p))
-				case None    => NotFound()
-			}
+    case GET -> Root / "ui" / "people" / IntVar(id) / "edit" =>
+      svc.people.find(_.id == id) match {
+        case Some(p) => Ok(html.personEditRow(p))
+        case None    => NotFound()
+      }
 
-		case req @ POST -> Root / "ui" / "people" =>
-			for {
-				body <- req.bodyText.compile.string
-				resp <- UrlForm.parse(body).flatMap(formDecoder.decode) match {
-					case Right(input) =>
-						svc.createPerson(input.name, input.town)
-						Ok(html.peopleRows(svc.people))
-					case Left(err) =>
-						BadRequest(err.toString)
-				}
-			} yield resp
+    case req @ POST -> Root / "ui" / "people" =>
+      for {
+        body <- req.bodyText.compile.string
+        resp <- UrlForm.parse(body).flatMap(formDecoder.decode) match {
+          case Right(input) =>
+            svc.createPerson(input.name, input.town)
+            Ok(html.peopleRows(svc.people))
+          case Left(err) =>
+            BadRequest(err.toString)
+        }
+      } yield resp
 
-		case req @ PUT -> Root / "ui" / "people" / IntVar(id) =>
-			for {
-				body <- req.bodyText.compile.string
-				resp <- UrlForm.parse(body).flatMap(formDecoder.decode) match {
-					case Right(input) =>
-						svc.updatePerson(id, input.name, input.town)
-						Ok(html.peopleRows(svc.people))
-					case Left(err) =>
-						BadRequest(err.toString)
-				}
-			} yield resp
+    case req @ PUT -> Root / "ui" / "people" / IntVar(id) =>
+      for {
+        body <- req.bodyText.compile.string
+        resp <- UrlForm.parse(body).flatMap(formDecoder.decode) match {
+          case Right(input) =>
+            svc.updatePerson(id, input.name, input.town)
+            Ok(html.peopleRows(svc.people))
+          case Left(err) =>
+            BadRequest(err.toString)
+        }
+      } yield resp
 
-		case DELETE -> Root / "ui" / "people" / IntVar(id) =>
-			svc.deletePerson(id)
-			Ok(html.peopleRows(svc.people))
-	}
+    case DELETE -> Root / "ui" / "people" / IntVar(id) =>
+      svc.deletePerson(id)
+      Ok(html.peopleRows(svc.people))
+  }
 }

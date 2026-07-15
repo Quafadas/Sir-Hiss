@@ -65,6 +65,25 @@ class PersonSuite extends munit.FunSuite {
     assertEquals(s.getPerson(2).name, "Jane")
   }
 
+  // ── Patch ───────────────────────────────────────────────────────────────────
+
+  test("patchPerson changes town without affecting id or name") {
+    val s = svc
+    val original = s.getPerson(2)
+    val patched = s.patchPerson(2, "York")
+    assertEquals(patched.id, original.id)
+    assertEquals(patched.name, original.name)
+    assertEquals(patched.town, Some("York"))
+    assertEquals(s.getPerson(2), patched)
+  }
+
+  test("patchPerson does not affect other rows") {
+    val s = svc
+    s.patchPerson(1, "Bath")
+    assertEquals(s.allPeople().people.length, 3)
+    assertEquals(s.getPerson(2), Person(2, "Jane", Some("Doe")))
+  }
+
   // ── Delete ──────────────────────────────────────────────────────────────────
 
   test("deletePerson removes the person") {
@@ -97,4 +116,3 @@ class PersonSuite extends munit.FunSuite {
     assertEquals(s.allPeople().people.length, 3)
   }
 }
-

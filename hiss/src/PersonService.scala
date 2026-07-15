@@ -42,6 +42,12 @@ trait PersonServiceT extends PersonService[Id] {
     updated
   }
 
+  override def patchPerson(id: Int, town: String): Person = {
+    val updated = getPerson(id).copy(town = Some(town))
+    people = people.map(p => if p.id == id then updated else p)
+    updated
+  }
+
   override def deletePerson(id: Int): Unit =
     people = people.filterNot(_.id == id)
 

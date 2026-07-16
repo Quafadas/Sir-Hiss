@@ -14,22 +14,17 @@ import cats.effect.Resource
 import cats.implicits.*
 
 object Routes {
-
   def routed(
       routes: Resource[IO, HttpRoutes[IO]]*
   ): Resource[IO, HttpRoutes[IO]] =
     routes.toList.sequence.map(_.reduceLeft(_ <+> _))
-
-  val docs: HttpRoutes[IO] = smithy4s.http4s.swagger.docs[IO](PersonService)
-
-  // val all: Resource[IO, HttpRoutes[IO]] = example.map(_ <+> docs)
 }
 
 object Main extends IOApp.Simple {
 
   val routes = Routes.routed(
     Harness.routesIO(PersonServiceImpl),
-    Resource.pure[IO, HttpRoutes[IO]](Routes.docs),
+    Resource.pure[IO, HttpRoutes[IO]](smithy4s.http4s.swagger.docs[IO](PersonService)),
     Resource.pure[IO, HttpRoutes[IO]](FormRoutes.routes(PersonServiceImpl))
   )
 
